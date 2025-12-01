@@ -18,17 +18,13 @@ Cp      = 500    # Specific heat
 gamma = k/Cp     # Calculated diffusion coefficient
 
 # Boundary condition value preparation
-T_in    = 10     # Inlet temperature
+T_in    = 20     # Inlet temperature
 T_init  = 0      # Initial guess for temperature
 T_east  = T_init # Default, initialization for (Homogeneous) Neumann
 T_west  = T_init # Default, initialization for (Homogeneous) Neumann
 T_north = T_init # Default, initialization for (Homogeneous) Neumann
 T_south = T_init # Default, initialization for (Homogeneous) Neumann
 q_wall  = 0      # Default heat flux at a wall (specified later)
-
-# Steady-state only
-deltaT = 1e30  # DO NOT CHANGE. WHY IS IT SET LIKE THIS?
-endTime = 1e30 # DO NOT CHANGE. WHY IS IT SET LIKE THIS?
 
 # Functions to check (True / False):
 check_calcDistances = True
@@ -92,6 +88,7 @@ Su_ref = refData['Su']
 Sp_ref = refData['Sp']
 T_ref = refData['T']
 T_o_ref = refData['T_o']
+T_o_ref = refData['T'] # Use T instead of T_o since T_o=0 for steady-state
 De_ref = refData['De']
 Dw_ref = refData['Dw']
 Dn_ref = refData['Dn']
@@ -156,8 +153,10 @@ if useModData:
     fyn_cIF = modData['fyn_cIF']
     fys_cIF = modData['fys_cIF']
     T_sDBCs = modData['T_sDBCs']
-    Su_cST = modData['Su_cST']
-    Sp_cST = modData['Sp_cST']
+    Su_cST_steady = modData['Su_cST_steady']
+    Sp_cST_steady = modData['Sp_cST_steady']
+    Su_cST_unsteady = modData['Su_cST_unsteady']
+    Sp_cST_unsteady = modData['Sp_cST_unsteady']
     De_cD = modData['De_cD']
     Dw_cD = modData['Dw_cD']
     Dn_cD = modData['Dn_cD']
@@ -189,9 +188,9 @@ def compare(phi, phi_ref, rTol, aTol, fName, aName, ref, func):
     fName_aName = fName + ', ' + aName
     try:
         np.testing.assert_allclose(phi, phi_ref, rtol=rTol, atol=aTol, verbose=False, err_msg=fName+': Array '+aName)
-        print(fName_aName.ljust(30)+'OK')
+        print(fName_aName.ljust(32)+'OK')
     except AssertionError as e:
-        print(fName_aName.ljust(30)+'NOT OK')
+        print(fName_aName.ljust(32)+'NOT OK')
         print('    Compare '+aName+'_'+ref+' (reference output)'+' and '+aName+'_'+func+' (your output)')
         print('    -----------------------------------------------------')
         print('    '+str(e).splitlines()[-3])
@@ -295,24 +294,54 @@ if not useModData:
 # Reset modified arrays:
 T = copy.deepcopy(T_ref)
 ###############################################################################
-# All values should be calculated, so set to zero first to avoid that a
+# All values should be calculated, so set to nan first to avoid that a
 # function that doesn't calculate any value is marked as OK
-Su*=0
-Sp*=0
+# We don't set to zero since zero may also be correct and a function that is
+# not yet implemented would then also return zero.
+Su*=float("nan")
+Sp*=float("nan")
+# Steady-state only
+deltaT = 1e30
 cF.calcSourceTerms(Su, Sp,
                    nI, nJ, q_wall, Cp, u, v, dx_we, dy_sn, rho, deltaT, T_o, caseID)
 if check_calcSourceTerms and useModData:
-    compare(Su, Su_cST, rTol, aTol, 'calcSourceTerms', 'Su', 'cST', 'cST_your')
-    compare(Sp, Sp_cST, rTol, aTol, 'calcSourceTerms', 'Sp', 'cST', 'cST_your')
+    compare(Su, Su_cST_steady, rTol, aTol, 'calcSourceTerms (steady)', 'Su', 'cST_steady', 'cST_steady_your')
+    compare(Sp, Sp_cST_steady, rTol, aTol, 'calcSourceTerms (steady)', 'Sp', 'cST_steady', 'cST_steady_your')
     # Save your modified arrays:
-    Su_cST_your = copy.deepcopy(Su)
-    Sp_cST_your = copy.deepcopy(Sp)
+    Su_cST_steady_your = copy.deepcopy(Su)
+    Sp_cST_steady_your = copy.deepcopy(Sp)
 if not check_calcSourceTerms and useModData:
-    print('calcSourceTerms:             NOT CHECKED')
+    print('calcSourceTerms (steady):    NOT CHECKED')
 # Save reference modified arrays:
 if not useModData:
-    Su_cST = copy.deepcopy(Su)
-    Sp_cST = copy.deepcopy(Sp)
+    Su_cST_steady = copy.deepcopy(Su)
+    Sp_cST_steady = copy.deepcopy(Sp)
+# Reset modified arrays:
+Su = copy.deepcopy(Su_ref)
+Sp = copy.deepcopy(Sp_ref)
+###############################################################################
+# All values should be calculated, so set to nan first to avoid that a
+# function that doesn't calculate any value is marked as OK
+# We don't set to zero since zero may also be correct and a function that is
+# not yet implemented would then also return zero.
+Su*=float("nan")
+Sp*=float("nan")
+# Unsteady only
+deltaT = 2 # Do not set to 1, since missing division with deltaT will not be captured.
+cF.calcSourceTerms(Su, Sp,
+                   nI, nJ, q_wall, Cp, u, v, dx_we, dy_sn, rho, deltaT, T_o, caseID)
+if check_calcSourceTerms and useModData:
+    compare(Su, Su_cST_unsteady, rTol, aTol, 'calcSourceTerms (unsteady)', 'Su', 'cST_unsteady', 'cST_unsteady_your')
+    compare(Sp, Sp_cST_unsteady, rTol, aTol, 'calcSourceTerms (unsteady)', 'Sp', 'cST_unsteady', 'cST_unsteady_your')
+    # Save your modified arrays:
+    Su_cST_unsteady_your = copy.deepcopy(Su)
+    Sp_cST_unsteady_your = copy.deepcopy(Sp)
+if not check_calcSourceTerms and useModData:
+    print('calcSourceTerms (unsteady):  NOT CHECKED')
+# Save reference modified arrays:
+if not useModData:
+    Su_cST_unsteady = copy.deepcopy(Su)
+    Sp_cST_unsteady = copy.deepcopy(Sp)
 # Reset modified arrays:
 Su = copy.deepcopy(Su_ref)
 Sp = copy.deepcopy(Sp_ref)
@@ -463,8 +492,11 @@ T = copy.deepcopy(T_ref)
 P = copy.deepcopy(P_ref)
 Q = copy.deepcopy(Q_ref)
 ###############################################################################
-# Depends on input values, so do not set to zero
-# T*=0
+# Keep internal values and set boundary values to zero
+T[:,0]*=0
+T[:,-1]*=0
+T[0,:]*=0
+T[-1,:]*=0
 cF.correctBoundaries(T,
                      nI, nJ, q_wall, k, dx_PE, dx_WP, dy_PN, dy_SP,
                      u, v, nodeX, nodeY, L, H, caseID)
@@ -497,8 +529,10 @@ if not useModData:
             fyn_cIF = fyn_cIF,
             fys_cIF = fys_cIF,
             T_sDBCs = T_sDBCs,
-            Su_cST = Su_cST,
-            Sp_cST = Sp_cST,
+            Su_cST_steady = Su_cST_steady,
+            Sp_cST_steady = Sp_cST_steady,
+            Su_cST_unsteady = Su_cST_unsteady,
+            Sp_cST_unsteady = Sp_cST_unsteady,
             De_cD = De_cD,
             Dw_cD = Dw_cD,
             Dn_cD = Dn_cD,
