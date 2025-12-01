@@ -1,0 +1,19 @@
+# Ignore the reference data folder entirely
+refData/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Spyder / IDE files
+.spyderproject
+.spyproject
+.vscode/
+.idea/
+
+# Backup files
+*~
+*.bak
+*.tmp
+*.old
