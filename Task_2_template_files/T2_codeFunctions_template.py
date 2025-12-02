@@ -48,12 +48,12 @@ def calcDistances(dx_PE, dx_WP, dy_PN, dy_SP, dx_we, dy_sn,
     # ADD CODE HERE
     for i in range(1, nI-1):
         for j in range(1, nJ-1):
-            dx_PE[i,j] = 0 # ADD CODE HERE
-            dx_WP[i,j] = 0 # ADD CODE HERE
-            dy_PN[i,j] = 0 # ADD CODE HERE
-            dy_SP[i,j] = 0 # ADD CODE HERE
-            dx_we[i,j] = 0 # ADD CODE HERE
-            dy_sn[i,j] = 0 # ADD CODE HERE
+            dx_PE[i,j] = nodeX[i+1,j] - nodeX[i,j] # ADD CODE HERE x
+            dx_WP[i,j] = nodeX[i,j] - nodeX[i-1,j] # ADD CODE HERE x
+            dy_PN[i,j] = nodeY[i,j+1] - nodeY[i,j] # ADD CODE HERE x
+            dy_SP[i,j] = nodeY[i,j] - nodeY[i,j-1] # ADD CODE HERE x
+            dx_we[i,j] = pointX[i,0] - pointX[i-1,0] # ADD CODE HERE x
+            dy_sn[i,j] = pointY[0,j] - pointY[0,j-1] # ADD CODE HERE x
 
 def calcInterpolationFactors(fxe, fxw, fyn, fys,
                              nI, nJ, dx_PE, dx_WP, dy_PN, dy_SP, dx_we, dy_sn):
@@ -63,10 +63,10 @@ def calcInterpolationFactors(fxe, fxw, fyn, fys,
     # ADD CODE HERE
     for i in range(1, nI-1):
         for j in range(1, nJ-1):
-            fxe[i,j] = 0 # ADD CODE HERE
-            fxw[i,j] = 0 # ADD CODE HERE
-            fyn[i,j] = 0 # ADD CODE HERE
-            fys[i,j] = 0 # ADD CODE HERE 
+            fxe[i,j] = 0.5 * dx_we[i,j] / dx_PE[i,j]  # ADD CODE HERE x
+            fxw[i,j] = 0.5 * dx_we[i,j] / dx_WP[i,j] # ADD CODE HERE x
+            fyn[i,j] = 0.5 * dy_sn[i,j] / dy_PN[i,j] # ADD CODE HERE x
+            fys[i,j] = 0.5 * dy_sn[i,j] / dy_SP[i,j] # ADD CODE HERE x
 
 def initArray(T,
               T_init):
