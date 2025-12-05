@@ -1,5 +1,5 @@
-# Ignore the reference data folder entirely
-refData/
+# Refernce data needed
+#refData/
 
 # Python cache
 __pycache__/
