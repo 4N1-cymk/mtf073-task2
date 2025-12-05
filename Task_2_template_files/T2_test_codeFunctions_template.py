@@ -11,10 +11,10 @@ import T2_codeFunctions_template as cF
 #===================== Inputs =====================
 
 # Case number (same as case in description, 1-25)
-caseID  = 1
+caseID  = 24
 rho     = 1      # Density
 k       = 1      # Thermal conductivity 
-Cp      = 500    # Specific heat
+Cp      = 200    # Specific heat
 gamma = k/Cp     # Calculated diffusion coefficient
 
 # Boundary condition value preparation
