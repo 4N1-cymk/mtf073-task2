@@ -85,28 +85,62 @@ def setDirichletBCs(T,
     # Inlets (found by velocity into domain):
     for i in range(nI):
         j = nJ-1
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        # TOP (north) – inlet if v < 0 (downwards into domain)
+        if v[i,j] < 0:
+            T[i,j] = T_in
+
+
         j = 0
-        # ADD CODE HERE
+        # ADD CODE HERE x SOUTH
+        # BOTTOM (south) – inlet if v > 0 (upwards into domain)
+        if v[i,j] > 0:
+            T[i,j] = T_in
+            
+        
+            
     for j in range(nJ):
         i = nI-1
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        # RIGHT (east) – inlet if u < 0 (into domain)
+        if u[i,j] < 0:
+            T[i,j] = T_in
         i = 0
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        # LEFT (west) – inlet if u > 0 (into domain)
+        if u[i,j] > 0:
+            T[i,j] = T_in
+            
     # Outlets:
         # Homogeneous Neumann:
         # Set coefficients later, default value already set
     # Walls (found by zero velocity), Dirichlet or initial guess:
     for i in range(nI):
         j = nJ-1
-        # ADD CODE HERE
-        j = 0
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        # NORTH wall
+        if u[i,j] == 0 and v[i,j] == 0:
+            T[i,j] = T_north
+        j= 0 
+        # ADD CODE HERE x
+        # SOUTH wall
+        if u[i,j] == 0 and v[i,j] == 0:
+            T[i,j] = T_south
+            
     for j in range(nJ):
         i = nI-1
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        # EAST wall
+        if u[i,j] == 0 and v[i,j] == 0:
+            T[i,j] = T_east
         i = 0
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        # WEST wall
+        if u[i,j] == 0 and v[i,j] == 0:
+            T[i,j] = T_west
+            
+    T[0,0] = T_south
+    T[nI-1,nJ-1] = T_north
 
 def calcSourceTerms(Su, Sp,
                     nI, nJ, q_wall, Cp, u, v, dx_we, dy_sn, rho, deltaT, T_o, caseID):
