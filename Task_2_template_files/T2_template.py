@@ -11,6 +11,7 @@
 # The code requires that:
 # * the file T2_codeFunctions_template.py is in the same path as this file
 # * the folder named 'data' is in the same path as this file
+# * the file reset.py is in the same path as this file
 #
 # Note that:
 # * Except for the "Inputs" below and the arguments to the
@@ -22,9 +23,8 @@
 # * You can easily go to the called function by putting the marker on it and
 #   pressing Ctrl-g
 
-# Clear all variables when running entire code:
-from IPython import get_ipython
-get_ipython().run_line_magic('reset', '-sf')
+
+
 # Packages needed
 import numpy as np
 import copy
@@ -41,7 +41,7 @@ caseID = 24
 
 # Geometric and mesh inputs (mesh is read from file)
 # L, H, mI, mJ, nI, nJ are set later, from the imported mesh
-grid_type = 'coarse'  # Either 'coarse' or 'fine'
+grid_type = 'coarse'  # Either 'coarse', 'fine' or 'newCoarse'
 
 # Physical properties
 rho     = 1      # Density
@@ -71,14 +71,14 @@ else:
     endTime = 1e30 # DO NOT CHANGE. WHY IS IT SET LIKE THIS?
 
 # Boundary condition value preparation
-T_init  = 0     # Initial guess for temperature
-T_east  = 30 # Default, initialization for (Homogeneous) Neumann
+T_init  = 0      # Initial guess for temperature
+T_east  = 30# Default, initialization for (Homogeneous) Neumann
 T_west  = T_init # Default, initialization for (Homogeneous) Neumann
 T_north = T_init # Default, initialization for (Homogeneous) Neumann
 T_south = 30 # Default, initialization for (Homogeneous) Neumann
 q_wall  = 0      # Default heat flux at a wall
 T_in    = 10     # Inlet temperature
-T_north = 10     # North wall Dirichlet value
+#T_north = 10     # North wall Dirichlet value
 
 # Solver inputs
 nExplCorrIter = 2000   # Maximum number of explicit correction iterations
@@ -86,16 +86,34 @@ nLinSolIter   = 10     # Number of linear solver iterations
 resTol        = 0.001  # Convergence criterium for residuals
 solver        = 'GS'   # Either GS (Gauss-Seidel) or TDMA
 
+##############################################################################
+# DO NOT CHANGE ANYTHING BELOW!                                              #
+# Exception: The arguments to the createAdditionalPlots function, if needed. #
+# Read and understand the code and the algorithm!                            #
+##############################################################################
+
 #====================== Code ======================
 
 # Read grid and velocity data:
-grid_numbers = [1,1,1,1,1,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5]
-grid_number  = grid_numbers[caseID-1]
-path = 'data/grid%d/%s_grid' % (grid_number,grid_type)
-pointXvector = np.genfromtxt('%s/xc.dat' % (path)) # x node coordinates
-pointYvector = np.genfromtxt('%s/yc.dat' % (path)) # y node coordinates
-u_datavector = np.genfromtxt('%s/u.dat' % (path))  # u velocity at the nodes
-v_datavector = np.genfromtxt('%s/v.dat' % (path))  # v veloctiy at the nodes
+meshAndVelocityData = np.load('meshAndVelocityData/Case_'+str(caseID)+'_'+ \
+                              'meshAndVelocityArrays_'+grid_type+'.npz')
+pointX = meshAndVelocityData['pointX']
+pointY = meshAndVelocityData['pointY']
+u = meshAndVelocityData['u']
+v = meshAndVelocityData['v']
+del meshAndVelocityData # Make sure that the file is released
+import gc               # Make sure that the file is released
+gc.collect()            # Make sure that the file is released
+# Set wall velocities to exactly zero:
+# u[u == 1e-10] = 0
+# v[v == 1e-10] = 0
+# Calculate length and height:
+L = pointX[-1,0] - pointX[0,0]
+H = pointY[0,-1] - pointY[0,0]
+# Scale probe locations with L and H
+if unsteady:
+    probeX*=L
+    probeY*=H
 
 # Preparation of "nan", to fill empty slots in consistently numbered arrays.
 # This makes it easier to check in Variable Explorer that values that should
@@ -105,12 +123,13 @@ nan = float("nan")
 # Allocate arrays (nan used to make clear where values need to be set)
 # Note that some arrays could actually be 1D since they only have a variation
 # in one direction, but they are kept 2D so the indexing is similar for all.
-mI     = len(pointXvector);          # Number of mesh points X direction
-mJ     = len(pointYvector);          # Number of mesh points X direction
-nI     = mI + 1;                     # Number of nodes in X direction, incl. boundaries
-nJ     = mJ + 1;                     # Number of nodes in Y direction, incl. boundaries
-pointX = np.zeros((mI,mJ))*nan       # X coords of the mesh points, in points
-pointY = np.zeros((mI,mJ))*nan       # Y coords of the mesh points, in points
+mI, mJ = pointX.shape                # Number of mesh points in X (i) and Y (j) directions
+nI     = mI + 1;                     # Number of nodes in X (i) direction, incl. boundaries
+nJ     = mJ + 1;                     # Number of nodes in Y (j) direction, incl. boundaries
+#####################################
+# Better alternative:               #
+# nodeX = np.full((nI, nJ), np.nan) #
+#####################################
 nodeX  = np.zeros((nI,nJ))*nan       # X coords of the nodes, in nodes
 nodeY  = np.zeros((nI,nJ))*nan       # Y coords of the nodes, in nodes
 dx_PE  = np.zeros((nI,nJ))*nan       # X distance to east node, in nodes
@@ -142,27 +161,9 @@ Fn     = np.zeros((nI,nJ))*nan       # Convective coefficients for north face, i
 Fs     = np.zeros((nI,nJ))*nan       # Convective coefficients for south face, in nodes
 P      = np.zeros((nI,nJ))*nan       # Array for TDMA, in nodes
 Q      = np.zeros((nI,nJ))*nan       # Array for TDMA, in nodes
-u      = u_datavector.reshape(nI,nJ) # Values of x-velocity, in nodes
-v      = v_datavector.reshape(nI,nJ) # Values of y-velocity, in nodes
 res    = []                          # Array for appending residual each iteration
 savedT = []                          # Array for saving T, for animated plot
 probeValues = []                     # Array for saving probe values
-# Set wall velocities to exactly zero:
-u[u == 1e-10] = 0
-v[v == 1e-10] = 0
-
-# Create mesh - point coordinates
-# (only changes arrays in first row of argument list)
-cF.createMesh(pointX, pointY,
-              mI, mJ, pointXvector, pointYvector)
-
-# Calculate length and height:
-L = pointX[mI-1,0] - pointX[0,0]
-H = pointY[0,mJ-1] - pointY[0,0]
-# Scale probe locations with L and H
-if unsteady:
-    probeX*=L
-    probeY*=H
 
 # Calculate node positions
 # (only changes arrays in first row of argument list)
@@ -285,7 +286,7 @@ cF.createDefaultPlots(
 # No arrays are changed    
 if unsteady:
     cF.createTimeEvolutionPlots(
-                                probeX, probeY, probeValues, caseID, grid_type)
+                                probeX, probeY, probeValues, deltaT, caseID, grid_type)
 
 # Create animated plots:
 # No arrays are changed    

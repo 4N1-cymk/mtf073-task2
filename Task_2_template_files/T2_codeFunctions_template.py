@@ -532,20 +532,21 @@ def createDefaultPlots(
             qY[i,j] = 0
         i = nI-1
         if u[i,j] == 0 and v[i,j] == 0:
-            dTdx = (T[nI-2,j] - T[nI-3,j]) / dx_WP[nI-2,j]
+            dTdx = (T[nI-2,j] - T[nI-3,j]) / (0.5 * dx_WP[nI-2,j])
             qX[i,j] = -k * dTdx # ADD CODE HERE
             qY[i,j] = 0
     for i in range(1,nI-1):
         j = 0
         if u[i,j] == 0 and v[i,j] == 0:
-            dTdy = (T[i,2] - T[i,1]) / dy_PN[i,1]
+            dTdy = (T[i,2] - T[i,1]) / (0.5 * dy_PN[i,1])
             qX[i,j] = 0
             qY[i,j] = -k * dTdy # ADD CODE HERE
         j = nJ-1
         if u[i,j] == 0 and v[i,j] == 0:
-            dTdy = (T[i,nJ-2] - T[i,nJ-3]) / dy_SP[i,nJ-2]
+            dTdy = (T[i,nJ-2] - T[i,nJ-3]) / (0.5 * dy_SP[i,nJ-2])
             qX[i,j] = 0
             qY[i,j] = -k * dTdy # ADD CODE HERE
+            
     plt.figure()
     plt.xlabel('x [m]')
     plt.ylabel('y [m]')
