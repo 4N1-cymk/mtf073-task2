@@ -151,25 +151,41 @@ def calcSourceTerms(Su, Sp,
     # Default values:
     for i in range(1,nI-1):
         for j in range(1,nJ-1):
-            Su[i,j] = 0 # ADD CODE HERE
+            #no volumetric source
+            Su[i,j] = 0 # ADD CODE HERE 
             Sp[i,j] = 0 # ADD CODE HERE
-
+            
     # Heat rate walls (found by zero velocity):
     for i in range(1,nI-1):
         j = nJ-2
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        if q_wall != 0 and abs(u[i, nJ-1]) < 0 and abs(v[i,nJ-1]) < 0:
+            Su[i,j] += (q_wall/Cp) * dx_we[i,j]
+        
         j = 1
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        if q_wall != 0 and abs(u[i, 0]) < 0 and abs(v[i,0]) < 0:
+            Su[i,j] += (q_wall/Cp) * dx_we[i,j]
+            
     for j in range(1,nJ-1):
         i = nI-2
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        if q_wall != 0 and abs(u[nI-1, j]) < 0 and abs(v[nI-1,j]) < 0:
+            Su[i,j] += (q_wall/Cp) * dy_sn[i,j]
+            
         i = 1
-        # ADD CODE HERE
-
+        # ADD CODE HERE x
+        if q_wall != 0 and abs(u[0, j]) < 0 and abs(v[0,j]) < 0:
+            Su[i,j] += (q_wall/Cp) * dy_sn[i,j]
+            
     # Time term:
     for i in range(1,nI-1):
         for j in range(1,nJ-1):
-            pass # ADD CODE HERE
+            #pass # ADD CODE HERE x
+            V = dx_we[i,j] * dy_sn[i,j]
+            a0P = rho * (V / deltaT)
+            Su[i,j] += a0P * T_o[i,j]
+            Sp[i,j] -= a0P
 
 def calcD(De, Dw, Dn, Ds,
           gamma, nI, nJ, dx_PE, dx_WP, dy_PN, dy_SP, dx_we, dy_sn):
@@ -180,10 +196,10 @@ def calcD(De, Dw, Dn, Ds,
     # ADD CODE HERE
     for i in range (1,nI-1):
         for j in range(1,nJ-1):
-            De[i,j] = 0 # ADD CODE HERE
-            Dw[i,j] = 0 # ADD CODE HERE
-            Dn[i,j] = 0 # ADD CODE HERE
-            Ds[i,j] = 0 # ADD CODE HERE
+            De[i,j] = gamma * (dy_sn[i,j]/dx_PE[i,j]) # ADD CODE HERE x
+            Dw[i,j] = gamma * (dy_sn[i,j]/dx_WP[i,j]) # ADD CODE HERE x
+            Dn[i,j] = gamma * (dx_we[i,j]/dy_PN[i,j]) # ADD CODE HERE x
+            Ds[i,j] = gamma * (dx_we[i,j]/dy_SP[i,j]) # ADD CODE HERE x
 
 def calcF(Fe, Fw, Fn, Fs,
           rho, nI, nJ, dx_we, dy_sn, fxe, fxw, fyn, fys, u, v):
@@ -195,10 +211,16 @@ def calcF(Fe, Fw, Fn, Fs,
     # ADD CODE HERE
     for i in range(1,nI-1):
         for j in range(1,nJ-1):
-            Fe[i,j] = 0 # ADD CODE HERE
-            Fw[i,j] = 0 # ADD CODE HERE
-            Fn[i,j] = 0 # ADD CODE HERE
-            Fs[i,j] = 0 # ADD CODE HERE
+            #non-equidistant grid
+            u_e = fxe[i,j] * u[i+1,j] + (1 - fxe[i,j]) * u[i,j] #east face normal velocity
+            u_w = fxw[i,j] * u[i-1,j] + (1 - fxw[i,j]) * u[i,j] #west face normal velocity
+            v_n = fyn[i,j] * v[i,j+1] + (1 - fyn[i,j]) * v[i,j] #north face normal velocity
+            v_s = fys[i,j] * v[i,j-1] + (1 - fys[i,j]) * v[i,j] #south face normal velocity
+            
+            Fe[i,j] = rho * u_e * dy_sn[i,j] # ADD CODE HERE x
+            Fw[i,j] = rho * u_w * dy_sn[i,j] # ADD CODE HERE x
+            Fn[i,j] = rho * v_n * dx_we[i,j] # ADD CODE HERE x
+            Fs[i,j] = rho * v_s * dx_we[i,j] # ADD CODE HERE x
 
 def calcHybridCoeffs(aE, aW, aN, aS, aP,
                      nI, nJ, De, Dw, Dn, Ds, Fe, Fw, Fn, Fs,
@@ -208,38 +230,53 @@ def calcHybridCoeffs(aE, aW, aN, aS, aP,
     # Calculate constant Hybrid scheme coefficients (not taking into account boundary conditions)
     for i in range(1,nI-1):
         for j in range(1,nJ-1):
-            aE[i,j] = 0 # ADD CODE HERE
-            aW[i,j] = 0 # ADD CODE HERE
-            aN[i,j] = 0 # ADD CODE HERE
-            aS[i,j] = 0 # ADD CODE HERE
+            aE[i,j] = max(0, -Fe[i,j], De[i,j] - (fxe[i,j] * Fe[i,j])) # ADD CODE HERE x
+            aW[i,j] = max(0, Fw[i,j], Dw[i,j] + (fxw[i,j] * Fw[i,j])) # ADD CODE HERE x
+            aN[i,j] = max(0, -Fn[i,j], Dn[i,j] - (fyn[i,j] * Fn[i,j])) # ADD CODE HERE x
+            aS[i,j] = max(0, Fs[i,j], Ds[i,j] + (fys[i,j] * Fs[i,j])) # ADD CODE HERE x
             
     # At outlets (found by velocity out of domain), set homogeneous Neumann
     for j in range(1,nJ-1):
         i = nI-2
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        if u[i+1,j] > 0:
+            aE[i,j] = 0
         i = 1
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        if u[i-1,j] < 0:
+            aW[i,j] = 0
+            
     for i in range(1,nI-1):
         j = nJ-2
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        if v[i,j+1] > 0:
+            aN[i,j] = 0
         j = 1
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        if v[i,j-1] < 0:
+            aS[i,j] = 0
     
     # (Homogeneous) Neumann walls (found by zero velocity):
     for i in range(1,nI-1):
         j = nJ-2
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        if abs(Fn[i, j]) < 1e-12:
+            aN[i,j] = 0
         j = 1
         # ADD CODE HERE
+            
     for j in range(1,nJ-1):
         i = nI-2
         # ADD CODE HERE
+     
         i = 1
-        # ADD CODE HERE
+        # ADD CODE HERE x
+        if u[i-1,j] == 0:
+            aW[i,j] = 0
     
     for i in range(1,nI-1):
         for j in range(1,nJ-1):       
-            aP[i,j] = 0 # ADD CODE HERE
+            aP[i,j] = aE[i,j] + aW[i,j] + aN[i,j] + aS[i,j] -Sp[i,j] # ADD CODE HERE
 
 def solveGaussSeidel(phi,
                      nI, nJ, aE, aW, aN, aS, aP, Su, nLinSolIter):
@@ -251,11 +288,15 @@ def solveGaussSeidel(phi,
     for linSolIter in range(nLinSolIter):   
         for i in range(1,nI-1):
             for j in range(1,nJ-1):
-                pass # ADD CODE HERE
+                #pass # ADD CODE HERE
+                #sweep west to east
+                phi[i,j] = (aE[i,j]*phi[i+1,j] + aW[i,j]*phi[i-1,j] + aN[i,j]*phi[i,j+1] + aS[i,j]*phi[i,j-1] + Su[i,j]) / aP[i,j]
         for j in range(1,nJ-1):
             for i in range(1,nI-1):
-                pass # ADD CODE HERE
-
+                #pass # ADD CODE HERE
+                #sweep south to north
+                phi[i,j] = (aE[i,j]*phi[i+1,j] + aW[i,j]*phi[i-1,j] + aN[i,j]*phi[i,j+1] + aS[i,j]*phi[i,j-1] + Su[i,j]) / aP[i,j]
+                
 def solveTDMA(phi, P, Q,
               nI, nJ, aE, aW, aN, aS, aP, Su, nLinSolIter):
     # Implement the Gauss-Seidel solver for general variable phi,
@@ -268,27 +309,83 @@ def solveTDMA(phi, P, Q,
         # Sweep from south to north
         for j in range(1,nJ-1):
             # ADD CODE HERE
-
+            i = 1
+            a = aP[i,j]
+            b = aE[i,j]
+            c = aW[i,j]
+            d = aN[i,j] * phi[i,j+1] + aS[i,j] * phi[i,j-1] + Su[i,j]
+            
+            P[i,j] = b / a
+            Q[i,j] = (d + c*phi[i-1,j]) / a
             for i in range(2,nI-2):
-                pass # ADD CODE HERE
-                
-            pass# ADD CODE HERE
-            
+               # pass # ADD CODE HERE
+               a = aP[i,j]
+               b = aE[i,j]
+               c = aW[i,j]
+               d = aN[i,j] * phi[i,j+1] + aS[i,j] * phi[i,j-1] + Su[i,j]
+               
+               den = a - c*P[i-1,j]
+               P[i,j] = b / den
+               Q[i,j] = (d + c*Q[i-1,j])/den
+               
+            #pass# ADD CODE HERE
+            i = nI -2
+            a = aP[i,j]
+            b = aE[i,j]
+            c = aW[i,j]
+            d = aN[i,j] * phi[i,j+1] + aS[i,j] * phi[i,j-1] + Su[i,j]
+            den = a - c*P[i-1,j]
+            P[i,j] = 0
+            Q[i,j] = (d + c*Q[i-1, j] + b*phi[i+1,j]) / den
             for i in reversed(range(1,nI-1)):
-                pass # ADD CODE HERE
-            
+                #pass # ADD CODE HERE
+                if i == nI-2:
+                    phi[i,j] = Q[i,j]
+                else:
+                    phi[i,j] = P[i,j]*phi[i+1,j] + Q[i,j]
         # March from north to south
         # Sweep from west to east 
         for i in range(1,nI-1):
-            pass # ADD CODE HERE
+            #pass # ADD CODE HERE
+            j = 1
+            a = aP[i,j]
+            b = aN[i,j]
+            c = aS[i,j]
+            d = aE[i,j] * phi[i+1,j] + aW[i,j] * phi[i-1,j] + Su[i,j]
+            
+            P[i,j] = b / a
+            Q[i,j] = (d + c*phi[i,j-1]) / a
             
             for j in range(2,nJ-2):
-                pass # ADD CODE HERE
+                #pass # ADD CODE HERE
+                a = aP[i,j]
+                b = aN[i,j]
+                c = aS[i,j]
+                d = aE[i,j] * phi[i+1,j] + aW[i,j] * phi[i-1,j] + Su[i,j]
                 
-            pass # ADD CODE HERE
+                den = a - c*P[i,j-1]
+                P[i,j] = b / den
+                Q[i,j] = (d + c*Q[i,j-1]) / den
+                
+                
+            #pass # ADD CODE HERE
+            j = nJ - 2
+            a = aP[i,j]
+            b = aN[i,j]
+            c = aS[i,j]
+            d = aE[i,j] * phi[i+1,j] + aW[i,j] * phi[i-1,j] + Su[i,j]
+            
+            den = a - c*P[i,j-1]
+            P[i,j] = 0
+            Q[i,j] = (d + c*Q[i,j-1] + b*phi[i,j+1]) / den
             
             for j in reversed(range(1,nJ-1)):
-                pass # ADD CODE HERE
+                #pass # ADD CODE HERE
+                if j == nJ-2:
+                    phi[i,j] = Q[i,j]
+                    
+                else:
+                    phi[i,j] = P[i,j]*phi[i,j+1] + Q[i,j]
 
 def correctBoundaries(T,
                       nI, nJ, q_wall, k, dx_PE, dx_WP, dy_PN, dy_SP,
