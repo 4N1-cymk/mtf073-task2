@@ -26,6 +26,7 @@ T_north = T_init # Default, initialization for (Homogeneous) Neumann
 T_south = 30 # Default, initialization for (Homogeneous) Neumann
 q_wall  = 0      # Default heat flux at a wall (specified later)
 
+
 # Functions to check (True / False):
 check_calcDistances = True
 check_calcInterpolationFactors = True

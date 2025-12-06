@@ -444,8 +444,12 @@ def calcNormalizedResiduals(res,
                             aP, aE, aW, aN, aS, Su, Sp):
     # Compute and print residuals (taking into account normalization):
     # Non-normalized residual:
-    r0 = 1.0 # ADD CODE HERE
-
+    r0 = 0.0 # ADD CODE HERE
+    for i in range(1,nI-1):
+        for j in range(1,nJ-1):
+            r = aE[i,j]*T[i+1,j] + aW[i,j]*T[i-1,j] + aN[i,j]*T[i,j+1] + aS[i,j]*T[i,j-1] + Su[i,j]
+            l = aP[i,j] * T[i,j]
+            r0 += abs(l-r)
     # Append residual at present iteration to list of all residuals, for plotting:
     res.append(r0)
     
@@ -523,21 +527,25 @@ def createDefaultPlots(
     for j in range(1,nJ-1):
         i = 0
         if u[i,j] == 0 and v[i,j] == 0:
-            qX[i,j] = 1 # ADD CODE HERE
+            dTdx = (T[2,j] - T[1,j]) / dx_PE[1,j]
+            qX[i,j] = -k * dTdx # ADD CODE HERE
             qY[i,j] = 0
         i = nI-1
         if u[i,j] == 0 and v[i,j] == 0:
-            qX[i,j] = 1 # ADD CODE HERE
+            dTdx = (T[nI-2,j] - T[nI-3,j]) / dx_WP[nI-2,j]
+            qX[i,j] = -k * dTdx # ADD CODE HERE
             qY[i,j] = 0
     for i in range(1,nI-1):
         j = 0
         if u[i,j] == 0 and v[i,j] == 0:
+            dTdy = (T[i,2] - T[i,1]) / dy_PN[i,1]
             qX[i,j] = 0
-            qY[i,j] = 1 # ADD CODE HERE
+            qY[i,j] = -k * dTdy # ADD CODE HERE
         j = nJ-1
         if u[i,j] == 0 and v[i,j] == 0:
+            dTdy = (T[i,nJ-2] - T[i,nJ-3]) / dy_SP[i,nJ-2]
             qX[i,j] = 0
-            qY[i,j] = 1 # ADD CODE HERE
+            qY[i,j] = -k * dTdy # ADD CODE HERE
     plt.figure()
     plt.xlabel('x [m]')
     plt.ylabel('y [m]')
