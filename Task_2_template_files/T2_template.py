@@ -37,7 +37,7 @@ import T2_codeFunctions_template as cF
 #===================== Inputs =====================
 
 # Case number (same as case in description, 1-25)
-caseID = 1
+caseID = 24
 
 # Geometric and mesh inputs (mesh is read from file)
 # L, H, mI, mJ, nI, nJ are set later, from the imported mesh
@@ -46,7 +46,7 @@ grid_type = 'coarse'  # Either 'coarse' or 'fine'
 # Physical properties
 rho     = 1      # Density
 k       = 1      # Thermal conductivity 
-Cp      = 500    # Specific heat
+Cp      = 200    # Specific heat
 gamma = k/Cp   # Calculated diffusion coefficient
 
 unsteady = False # True or False
@@ -71,13 +71,13 @@ else:
     endTime = 1e30 # DO NOT CHANGE. WHY IS IT SET LIKE THIS?
 
 # Boundary condition value preparation
-T_init  = 0      # Initial guess for temperature
-T_east  = T_init # Default, initialization for (Homogeneous) Neumann
+T_init  = 0     # Initial guess for temperature
+T_east  = 30 # Default, initialization for (Homogeneous) Neumann
 T_west  = T_init # Default, initialization for (Homogeneous) Neumann
 T_north = T_init # Default, initialization for (Homogeneous) Neumann
-T_south = T_init # Default, initialization for (Homogeneous) Neumann
+T_south = 30 # Default, initialization for (Homogeneous) Neumann
 q_wall  = 0      # Default heat flux at a wall
-T_in    = 20     # Inlet temperature
+T_in    = 10     # Inlet temperature
 T_north = 10     # North wall Dirichlet value
 
 # Solver inputs

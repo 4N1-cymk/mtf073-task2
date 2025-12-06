@@ -18,12 +18,12 @@ Cp      = 200    # Specific heat
 gamma = k/Cp     # Calculated diffusion coefficient
 
 # Boundary condition value preparation
-T_in    = 20     # Inlet temperature
+T_in    = 10     # Inlet temperature
 T_init  = 0      # Initial guess for temperature
-T_east  = T_init # Default, initialization for (Homogeneous) Neumann
+T_east  = 30 # Default, initialization for (Homogeneous) Neumann
 T_west  = T_init # Default, initialization for (Homogeneous) Neumann
 T_north = T_init # Default, initialization for (Homogeneous) Neumann
-T_south = T_init # Default, initialization for (Homogeneous) Neumann
+T_south = 30 # Default, initialization for (Homogeneous) Neumann
 q_wall  = 0      # Default heat flux at a wall (specified later)
 
 # Functions to check (True / False):

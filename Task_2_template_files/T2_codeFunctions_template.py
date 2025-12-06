@@ -391,13 +391,47 @@ def correctBoundaries(T,
                       nI, nJ, q_wall, k, dx_PE, dx_WP, dy_PN, dy_SP,
                       u, v, nodeX, nodeY, L, H, caseID):
     # Only change arrays in first row of argument list!
+    def is_wall(i,j,u,v,e=1e-12): return (abs(u[i,j]) < e) and (abs(v[i,j]) < e)
+    def is_inlet(i,j,u,v,e=1e-12):
+        if is_wall(i, j, u, v): return False
+        if i == 0: return u[i,j] > e #west:
+        if i == nI - 1: return u[i,j] < -e #east:
+        if j == 0: return v[i,j] > e #south:
+        if j == nJ - 1: return v[i,j] < -e #north:
+        return False #interior weird geometry
 
+    def is_outlet(i,j,u,v,e=1e-12):
+        if is_wall(i, j, u, v): return False
+        if i == 0: return u[i,j] < -e #west:
+        if i == nI - 1: return u[i,j] > e #east:
+        if j == 0: return v[i,j] < -e #south:
+        if j == nJ - 1: return v[i,j] > e #north:
+        return False #interior weird geometry
     # Copy T to walls where (non-)homogeneous Neumann is applied
     # Note that specified heat flux is positive INTO computational domain!
     # ADD CODE HERE
     
     # Copy T to outlets (where homogeneous Neumann should always be applied):
     # ADD CODE HERE
+    for i in range(1,nI-1):
+        j = nJ - 1
+        if is_wall(i, j, u, v): T[i,j] = T[i,j-1] # north
+        
+    for j in range(1,nJ-1):
+        i = 0
+        if is_wall(i, j, u, v): T[i,j] = T[i+1,j] # west
+
+    
+    for i in range(1,nI-1):
+    
+        j = nJ - 1
+        if is_outlet(i, j, u, v): T[i,j] = T[i,j-1] # north
+        
+    for j in range(1,nJ-1):
+        i = 0
+        if is_outlet(i, j, u, v): T[i,j] = T[i+1,j] # west
+        i = nI - 1
+        if is_outlet(i, j, u, v): T[i,j] = T[i-1,j] # east
 
     # Set cornerpoint values to average of neighbouring boundary points
     T[0,0]   = 0.5*(T[1,0]+T[0,1])     # DO NOT CHANGE
