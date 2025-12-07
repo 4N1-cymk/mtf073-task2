@@ -23,8 +23,10 @@
 # * You can easily go to the called function by putting the marker on it and
 #   pressing Ctrl-g
 
-
-
+# Clear all variables when running entire code:
+#from reset import universal_reset
+#universal_reset(protect={'universal_reset'}, verbose=True)
+#no reset.py file
 # Packages needed
 import numpy as np
 import copy
@@ -49,19 +51,19 @@ k       = 1      # Thermal conductivity
 Cp      = 200    # Specific heat
 gamma = k/Cp   # Calculated diffusion coefficient
 
-unsteady = False # True or False
+unsteady = True # True or False
 
 if unsteady:
     # For unsteady:
     # ADD CODE HERE: PLAY WITH THESE ONCE YOUR CODE IS WORKING
     deltaT = 1   # ADD CODE HERE
-    endTime = 50 # ADD CODE HERE
+    endTime = 400 # ADD CODE HERE
     # Note that a frame is saved every "saveInterval" time step if
     # unsteady = True and createAnimatedPlots = True! Don't overload
     # your computer! Set createAnimatedPlots to False to save time.
     saveInterval = 2 # Save T at every "saveInterval" time step, for
                      # animated plot
-    createAnimatedPlots = False # True or False
+    createAnimatedPlots = True # True or False
     # Set any number of probe positions, relative to L and H (0-1)
     probeX = np.array([0.1, 0.9, 0.1, 0.9])
     probeY = np.array([0.1, 0.1, 0.9, 0.9])

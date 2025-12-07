@@ -493,8 +493,8 @@ def createDefaultPlots(
     plt.vlines(pointX[:,0],pointY[0,0],pointY[0,-1],colors = 'k',linestyles = 'dashed')
     plt.hlines(pointY[0,:],pointX[0,0],pointX[-1,0],colors = 'k',linestyles = 'dashed')
     plt.plot(nodeX, nodeY, 'ro')
-    plt.show()
     plt.savefig('Figures/Case_'+str(caseID)+'_'+grid_type+'_mesh.png')
+    plt.show()
     
     # Plot velocity vectors
     plt.figure()
@@ -503,8 +503,8 @@ def createDefaultPlots(
     plt.xlabel('x [m]')
     plt.ylabel('y [m]')
     plt.axis('equal')
-    plt.show()
     plt.savefig('Figures/Case_'+str(caseID)+'_'+grid_type+'_velocityVectors.png')
+    plt.show()
     
     # Plot temperature contour
     plt.figure()
@@ -517,8 +517,8 @@ def createDefaultPlots(
     plt.ylabel('y [m]')
     plt.axis('equal')
     plt.tight_layout()
-    plt.show()
     plt.savefig('Figures/Case_'+str(caseID)+'_'+grid_type+'_temperatureDistribution.png')
+    plt.show()
     
     # Plot heat flux vectors NORMAL TO WALL boundary face centers ONLY (not in corners)
     # Use temperature gradient just inside domain (note difference to set heat flux)
@@ -532,18 +532,18 @@ def createDefaultPlots(
             qY[i,j] = 0
         i = nI-1
         if u[i,j] == 0 and v[i,j] == 0:
-            dTdx = (T[nI-2,j] - T[nI-3,j]) / (0.5 * dx_WP[nI-2,j])
+            dTdx = (T[nI-2,j] - T[nI-3,j]) / ( dx_WP[nI-2,j])
             qX[i,j] = -k * dTdx # ADD CODE HERE
             qY[i,j] = 0
     for i in range(1,nI-1):
         j = 0
         if u[i,j] == 0 and v[i,j] == 0:
-            dTdy = (T[i,2] - T[i,1]) / (0.5 * dy_PN[i,1])
+            dTdy = (T[i,2] - T[i,1]) / ( dy_PN[i,1])
             qX[i,j] = 0
             qY[i,j] = -k * dTdy # ADD CODE HERE
         j = nJ-1
         if u[i,j] == 0 and v[i,j] == 0:
-            dTdy = (T[i,nJ-2] - T[i,nJ-3]) / (0.5 * dy_SP[i,nJ-2])
+            dTdy = (T[i,nJ-2] - T[i,nJ-3]) / ( dy_SP[i,nJ-2])
             qX[i,j] = 0
             qY[i,j] = -k * dTdy # ADD CODE HERE
             
@@ -559,8 +559,8 @@ def createDefaultPlots(
     plt.xlim(-0.5*L, 3/2*L)
     plt.ylim(-0.5*H, 3/2*H)
     plt.tight_layout()
-    plt.show()
     plt.savefig('Figures/Case_'+str(caseID)+'_'+grid_type+'_wallHeatFlux.png')
+    plt.show()
     
     # Plot residual convergence
     plt.figure()
@@ -572,11 +572,11 @@ def createDefaultPlots(
     plt.plot(resLength, normalized)
     plt.grid()
     plt.yscale('log')
+    plt.savefig('Figures/Case_'+str(caseID)+'_'+grid_type+'_residualConvergence.png')  
     plt.show()
-    plt.savefig('Figures/Case_'+str(caseID)+'_'+grid_type+'_residualConvergence.png')    
 
 def createTimeEvolutionPlots(
-                             probeX, probeY, probeValues, caseID, grid_type):
+                             probeX, probeY, probeValues, deltaT, caseID, grid_type):
     # Convert list of arrays to a 2D array: shape (n_steps, n_probes)
     data = np.vstack(probeValues)  # rows = time steps, columns = probe points
     n_steps, n_probes = data.shape
@@ -590,8 +590,8 @@ def createTimeEvolutionPlots(
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.show()
     plt.savefig('Figures/Case_'+str(caseID)+'_'+grid_type+'_timeEvolution.png')
+    plt.show()
 
 def createAnimatedPlots(
                        nodeX, nodeY, savedT):
@@ -634,3 +634,5 @@ def createAnimatedPlots(
 
 def createAdditionalPlots():
     pass
+
+    
